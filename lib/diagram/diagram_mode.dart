@@ -1,0 +1,4 @@
+enum DiagramMode {
+  select,
+  placeTable,
+}

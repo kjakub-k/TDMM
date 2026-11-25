@@ -7,6 +7,8 @@ environment:
   sdk: ^3.13.5
 
 dependencies:
+  file_picker: ^13.1.0
+  fluent_ui: ^4.17.0
   flutter:
     sdk: flutter
 
@@ -17,3 +19,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/default_background.png
+    - assets/table_icon.png
+    - assets/kursor_icon.png
