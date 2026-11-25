@@ -1,3 +1,5 @@
+import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
+import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/viewer/viewer_background.dart';
 import 'package:tdmm/viewer/dmm_viewer.dart';
 import 'package:tdmm/diagram/diagram_mode.dart';
@@ -112,7 +114,7 @@ class DiagramEditorState extends State<DiagramEditor> {
         position: original.position + const Offset(20, 20),
         size: original.size,
         name: original.name,
-        attributes: List<Attribute>.from(original.attributes),
+        attributes: List<AttributeData>.from(original.attributes),
       );
 
       tables.add(copy);
@@ -135,7 +137,7 @@ class DiagramEditorState extends State<DiagramEditor> {
         position: original.position + const Offset(20, 20),
         size: original.size,
         name: original.name,
-        attributes: List<Attribute>.from(original.attributes),
+        attributes: List<AttributeData>.from(original.attributes),
       );
 
       tables.add(copy);

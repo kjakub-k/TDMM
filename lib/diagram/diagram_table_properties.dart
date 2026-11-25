@@ -1,4 +1,7 @@
-import 'package:tdmm/diagram/diagram_table.dart';
+import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
+import 'package:tdmm/diagram/diagram_data/data_type_picker.dart';
+import 'package:tdmm/diagram/diagram_data/key_type_data.dart';
+import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
 class DiagramTableProperties extends StatefulWidget {
@@ -22,7 +25,7 @@ class DiagramTablePropertiesState extends State<DiagramTableProperties> {
   void addColumn() {
     setState(() {
       widget.table.attributes.add(
-        Attribute(
+        AttributeData(
           name: 'attribute_${widget.table.attributes.length + 1}',
         ),
       );
@@ -52,23 +55,6 @@ class DiagramTablePropertiesState extends State<DiagramTableProperties> {
     });
 
     widget.onTableChanged();
-  }
-
-  String dataTypeLabel(DataType type) {
-    switch (type) {
-      case DataType.integer:
-        return 'Integer';
-      case DataType.varchar:
-        return 'Varchar';
-      case DataType.text:
-        return 'Text';
-      case DataType.boolean:
-        return 'Boolean';
-      case DataType.decimal:
-        return 'Decimal';
-      case DataType.dateTime:
-        return 'Date / Time';
-    }
   }
 
   @override
@@ -173,7 +159,7 @@ class DiagramTablePropertiesState extends State<DiagramTableProperties> {
     );
   }
 
-  Widget buildAttribute(Attribute attribute, int index) {
+  Widget buildAttribute(AttributeData attribute, int index) {
     final theme = FluentTheme.of(context);
 
     return Container(
@@ -219,21 +205,9 @@ class DiagramTablePropertiesState extends State<DiagramTableProperties> {
 
             SizedBox(
               width: 125,
-              child: ComboBox<DataType>(
+              child: DataTypePicker(
                 value: attribute.dataType,
-                isExpanded: true,
-                items: DataType.values.map((type) {
-                  return ComboBoxItem<DataType>(
-                    value: type,
-                    child: Text(
-                      dataTypeLabel(type),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                }).toList(),
                 onChanged: (type) {
-                  if (type == null) return;
-
                   setState(() {
                     attribute.dataType = type;
                   });
@@ -265,11 +239,11 @@ class DiagramTablePropertiesState extends State<DiagramTableProperties> {
 
             buildCheckbox(
               label: 'PRIMARY KEY',
-              value: attribute.key == KeyType.primary,
+              value: attribute.key == KeyTypeData.primary,
               onChanged: (value) {
                 setState(() {
                   attribute.key =
-                      value ? KeyType.primary : null;
+                      value ? KeyTypeData.primary : null;
                 });
                 widget.onTableChanged();
               },

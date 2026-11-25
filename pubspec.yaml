@@ -24,3 +24,6 @@ flutter:
     - assets/default_background.png
     - assets/table_icon.png
     - assets/kursor_icon.png
+    - assets/one_to_one.png
+    - assets/one_to_many.png
+    - assets/many_to_many.png

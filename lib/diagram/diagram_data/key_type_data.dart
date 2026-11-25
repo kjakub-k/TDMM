@@ -1,0 +1,4 @@
+enum KeyTypeData {
+  foreign,
+  primary,
+}

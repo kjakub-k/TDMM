@@ -1,3 +1,4 @@
+import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
@@ -152,7 +153,7 @@ class DiagramTable extends ViewerElement {
                                     ),
                                     child: Text(
                                       '${attribute.name} '
-                                      '${dataTypeLabel(attribute.dataType)}',
+                                      '${attribute.dataType.name}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.typography.caption,
@@ -204,79 +205,4 @@ class DiagramTable extends ViewerElement {
       ),
     );
   }
-
-  String dataTypeLabel(DataType type) {
-    switch (type) {
-      case DataType.integer:
-        return 'INT';
-      case DataType.varchar:
-        return 'VARCHAR';
-      case DataType.text:
-        return 'TEXT';
-      case DataType.boolean:
-        return 'BOOL';
-      case DataType.decimal:
-        return 'DECIMAL';
-      case DataType.dateTime:
-        return 'DATE';
-    }
-  }
-}
-
-class TableData {
-  Offset position;
-  Size size;
-  String name;
-  List<Attribute> attributes;
-
-  TableData({
-    required this.position,
-    this.size = const Size(200, 100),
-    this.name = 'Table',
-    List<Attribute>? attributes,
-  }) : attributes = attributes ?? [
-      Attribute(
-        name: "id",
-        isNotNull: true,
-        key: KeyType.primary
-      ),
-      Attribute(
-        name: "name",
-        dataType: DataType.varchar
-      ),
-    ];
-}
-
-class Attribute {
-  String name;
-  DataType dataType;
-  bool isNotNull;
-  bool isUnique;
-  bool isUnsigned;
-  bool isAutoIncremental;
-  KeyType? key;
-
-  Attribute({
-    required this.name,
-    this.dataType = DataType.integer,
-    this.isNotNull = false,
-    this.isUnique = false,
-    this.isUnsigned = false,
-    this.isAutoIncremental = false,
-    this.key,
-  });
-}
-
-enum DataType {
-  integer,
-  varchar,
-  text,
-  boolean,
-  decimal,
-  dateTime,
-}
-
-enum KeyType {
-  foreign,
-  primary,
 }
