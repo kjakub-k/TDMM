@@ -1,8 +1,8 @@
+import 'package:tdmm/diagram/diagram_controller.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
-import 'package:tdmm/diagram/diagram_table/diagram_editor_table_functions.dart';
-import 'package:tdmm/viewer/viewer_background.dart';
+import 'package:tdmm/diagram/diagram_table/diagram_table.dart';
+import 'package:tdmm/diagram/diagram_table/diagram_table_properties/diagram_table_properties_panel.dart';
 import 'package:tdmm/viewer/dmm_viewer.dart';
-import 'package:tdmm/diagram/diagram_mode.dart';
 import 'package:tdmm/diagram/diagram_side_toolbar.dart';
 import 'package:tdmm/diagram/diagram_top_toolbar.dart';
 import 'package:fluent_ui/fluent_ui.dart';
@@ -20,89 +20,27 @@ class DiagramEditor extends StatefulWidget {
   State<DiagramEditor> createState() => DiagramEditorState();
 }
 
-class DiagramEditorState extends State<DiagramEditor> with DiagramEditorTableFunctions {
-  ViewerBackground background = ViewerBackground();
-  DiagramMode mode = DiagramMode.select;
-  late Size canvasSize;
-  double minCanvasWidth = 400;
-  double minCanvasHeight = 300;
-
-  @override
-  int? selectedTableIndex;
-  @override
-  TableData? editingTable;
-  @override
-  final List<TableData> tables = [];
-  @override
+class DiagramEditorState extends State<DiagramEditor> {
   double propertiesPanelHeight = 300;
-  @override
   double minPropertiesPanelHeight = 150;
-  @override
   double maxPropertiesPanelHeight = 600;
 
-  @override
+  late final DiagramController diagramController;
   late final FlyoutController flyoutController;
-
-  @override
-  void dispose() {
-    flyoutController.dispose();
-    super.dispose();
-  }
+  final double _propertiesPanelHeight = 300;
 
   @override
   void initState() {
     super.initState();
-    canvasSize = widget.setSize;
+    diagramController = DiagramController(initialCanvasSize: widget.setSize);
     flyoutController = FlyoutController();
   }
 
   @override
-  void refreshEditor() {
-    setState(() {});
-  }
-
-  void resizeCanvas(Offset delta) {
-    setState(() {
-      canvasSize = Size(
-        (canvasSize.width + delta.dx)
-            .clamp(minCanvasWidth, 10000.0),
-        (canvasSize.height + delta.dy)
-            .clamp(minCanvasHeight, 10000.0),
-      );
-    });
-  }
-
-  void setViewerSize(Size newSize) {
-    setState(() {
-      canvasSize = newSize;
-    });
-  }
-
-  void handleOnViewerClick(Offset clickPosition) {
-    selectTable(null);
-
-    if (mode != DiagramMode.placeTable) {
-      return;
-    }
-
-    setState(() {
-      tables.add(TableData(position: clickPosition));
-      selectedTableIndex = tables.length - 1;
-      mode = DiagramMode.select;
-    });
-  }
-
-  void setBackgroundImage(ViewerBackground newBackground) {
-    setState(() {
-      background.image = newBackground.image;
-      background.mode = newBackground.mode;
-    });
-  }
-
-  void setDiagramMode(DiagramMode newMode) {
-    setState(() {
-      mode = newMode;
-    });
+  void dispose() {
+    diagramController.dispose();
+    flyoutController.dispose();
+    super.dispose();
   }
 
   KeyEventResult handleKeyEvent(
@@ -118,104 +56,165 @@ class DiagramEditorState extends State<DiagramEditor> with DiagramEditorTableFun
     }
 
     if (event.logicalKey == LogicalKeyboardKey.keyX) {
-      deleteSelectedTable();
+      diagramController.deleteSelectedTable();
       return KeyEventResult.handled;
     }
 
     if (event.logicalKey == LogicalKeyboardKey.keyD) {
-      duplicateSelectedTable();
+      diagramController.duplicateSelectedTable();
       return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;
   }
 
+  void showTableContextMenu(
+  Offset position,
+  TableData table,
+  ) {
+    flyoutController.showFlyout<void>(
+      position: position,
+      builder: (context) {
+        return MenuFlyout(
+          items: [
+            MenuFlyoutItem(
+              leading: const Icon(FluentIcons.edit),
+              text: const Text('Upravit'),
+              onPressed: () => diagramController.openTableProperties(table.id),
+            ),
+            MenuFlyoutItem(
+              leading: const Icon(FluentIcons.copy),
+              text: const Text('Duplikovat'),
+              onPressed: () => diagramController.duplicateTable(table.id),
+            ),
+            const MenuFlyoutSeparator(),
+            MenuFlyoutItem(
+              leading: const Icon(FluentIcons.delete),
+              text: const Text('Smazat'),
+              onPressed: () => diagramController.deleteTable(table.id),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<DiagramTable> buildTables() {
+    return [
+      for (final table in diagramController.tables)
+        DiagramTable(
+          key: ValueKey(table.id),
+          table: table,
+          selected: diagramController.selectedTableId == table.id,
+          onSelect: () => diagramController.selectTable(table.id),
+          onMove: (delta) => diagramController.moveTable(table.id, delta),
+          onResize: (delta) => diagramController.resizeTable(table.id, delta),
+          onDoubleTap: () => diagramController.openTableProperties(table.id),
+          onDelete: () => diagramController.deleteTable(table.id),
+          onDuplicate: () => diagramController.duplicateTable(table.id),
+          onShowContextMenu: (position) => showTableContextMenu(position, table),
+        ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = FluentTheme.of(context);
+    return ListenableBuilder(
+      listenable: diagramController,
+      builder: (context, _) {
+        final editingTable = diagramController.editingTable;
 
-    return NavigationView(
-      content: ScaffoldPage(
-        padding: EdgeInsets.zero,
-        content: Focus(
-          autofocus: true,
-          onKeyEvent: handleKeyEvent,
-          child: Row(
-            children: [
-              DiagramSideToolbar(
-                  onDiagramModeChanged: setDiagramMode,
-                  currentDiagramMode: mode,
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    DiagramTopToolbar(
-                      viewerBackground: background,
-                      onBackgroundChanged: setBackgroundImage,
-                      viewerSize: canvasSize,
-                      onViewerSizeChanged: setViewerSize,
-                    ),
-
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: FlyoutTarget(
-                              controller: flyoutController,
-                              child: Padding(
-                                padding: EdgeInsets.zero,
-                                child: DMMViewer(
-                                  viewerSize: canvasSize,
-                                  background: background,
-                                  elements: buildTables(tables),
-                                  onViewerClick: handleOnViewerClick,
-                                  onViewerResize: resizeCanvas,
+        return NavigationView(
+          content: ScaffoldPage(
+            padding: EdgeInsets.zero,
+            content: Focus(
+              autofocus: true,
+              onKeyEvent: handleKeyEvent,
+              child: Row(
+                children: [
+                  DiagramSideToolbar(
+                    currentDiagramMode: diagramController.mode,
+                    onDiagramModeChanged: diagramController.setMode,
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        DiagramTopToolbar(
+                          viewerBackground: diagramController.background,
+                          onBackgroundChanged: diagramController.setBackground,
+                          viewerSize: diagramController.canvasSize,
+                          onViewerSizeChanged: diagramController.setCanvasSize,
+                        ),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: FlyoutTarget(
+                                  controller: flyoutController,
+                                  child: DMMViewer(
+                                    viewerSize: diagramController.canvasSize,
+                                    background: diagramController.background,
+                                    elements: buildTables(),
+                                    onViewerClick: diagramController.handleCanvasClick,
+                                    onViewerResize: diagramController.resizeCanvas,
+                                  ),
                                 ),
+                              ),
+                              if (editingTable != null)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  height: _propertiesPanelHeight,
+                                  child: DiagramTablePropertiesPanel(
+                                    table: editingTable,
+                                    controller: diagramController,
+                                    onResizeDelta: (delta) {
+                                      setState(() {
+                                        propertiesPanelHeight =
+                                            (propertiesPanelHeight - delta)
+                                                .clamp(
+                                                  minPropertiesPanelHeight,
+                                                  maxPropertiesPanelHeight,
+                                                );
+                                      });
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                         Container(
+                          height: 30,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                              top: BorderSide(
+                                color: Colors.black,
                               ),
                             ),
                           ),
-
-                          if (editingTable != null)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              height: propertiesPanelHeight,
-                              child: buildPropertiesPanel(theme),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    Container(
-                      height: 30,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border(
-                          top: BorderSide(
-                            color: Colors.black,
+                          child: Row(
+                            children: [
+                              const Spacer(),
+                              Text(
+                                '${diagramController.canvasSize.width.toInt()} × ${diagramController.canvasSize.height.toInt()}',
+                              )
+                            ],
                           ),
                         ),
-                      ),
-                      child: Row(
-                        children: [
-                          const Spacer(),
-                          Text(
-                            '${canvasSize.width.toInt()} × ${canvasSize.height.toInt()}',
-                          )
-                        ],
-                      ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

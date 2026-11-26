@@ -1,4 +1,4 @@
-import 'package:tdmm/diagram/diagram_data/data_type_limitations.dart';
+import 'package:tdmm/diagram/diagram_data/data_type_capability.dart';
 
 class DataTypeData {
   final String name;
@@ -65,7 +65,7 @@ class DataTypeData {
     bytea,
     xml,
     bit,
-    bitvarying,
+    bitVarying,
   ];
 
   // Numeric
@@ -249,8 +249,8 @@ class DataTypeData {
     ],
     category: "Special"
   );
-  static const bitvarying = DataTypeData(
-    name: "BITVARYING",
+  static const bitVarying = DataTypeData(
+    name: "BIT VARYING",
     capabilities: [
       DataTypeCapability.lengthFirst
     ],

@@ -32,6 +32,32 @@ class DiagramTopToolbar extends StatelessWidget {
       child: Row(
         children: [
           DropDownButton(
+            title: const Text('Soubor'),
+            items: [
+              MenuFlyoutItem(
+                text: const Text('Uložit'),
+                onPressed: () async {
+                  
+                },
+              ),
+              MenuFlyoutItem(
+                text: const Text('Uložit jako...'),
+                onPressed: () async {
+                  
+                },
+              ),
+              MenuFlyoutItem(
+                text: const Text('Načíst'),
+                onPressed: () async {
+                  
+                },
+              ),
+            ]
+          ),
+
+          SizedBox(width: 8,),
+          
+          DropDownButton(
             title: const Text('Diagram'),
             items: [
               MenuFlyoutItem(
@@ -54,7 +80,6 @@ class DiagramTopToolbar extends StatelessWidget {
                 text: const Text('Vybrat pozadí (Opakovaný)'),
                 onPressed: () async {
                   final newBackground = await chooseBackground(
-                    currentBackground: viewerBackground,
                     backgroundMode: BackgroundMode.repeating,
                   );
 
@@ -68,7 +93,6 @@ class DiagramTopToolbar extends StatelessWidget {
                 text: const Text('Vybrat pozadí (Roztáhnutý)'),
                 onPressed: () async {
                   final newBackground = await chooseBackground(
-                    currentBackground: viewerBackground,
                     backgroundMode: BackgroundMode.stretched,
                   );
 
@@ -78,29 +102,6 @@ class DiagramTopToolbar extends StatelessWidget {
                 },
               ),
             ],
-          ),
-          DropDownButton(
-            title: const Text('Soubor'),
-            items: [
-              MenuFlyoutItem(
-                text: const Text('Uložit'),
-                onPressed: () async {
-                  
-                },
-              ),
-              MenuFlyoutItem(
-                text: const Text('Uložit jako...'),
-                onPressed: () async {
-                  
-                },
-              ),
-              MenuFlyoutItem(
-                text: const Text('Načíst'),
-                onPressed: () async {
-                  
-                },
-              ),
-            ]
           ),
         ],
       ),

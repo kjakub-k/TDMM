@@ -1,5 +1,3 @@
-import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
-import 'package:tdmm/diagram/diagram_data/data_type_limitations.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
 import 'package:fluent_ui/fluent_ui.dart';
@@ -117,7 +115,7 @@ class DiagramTable extends ViewerElement {
                                     ),
                                     child: Text(
                                       '${attribute.name} '
-                                      '${getAttributeTypeName(attribute)}',
+                                      '${attribute.getDataTypeName()}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.typography.caption,
@@ -168,23 +166,5 @@ class DiagramTable extends ViewerElement {
         ),
       ),
     );
-  }
-
-  String getAttributeTypeName(AttributeData attribute) {
-    final capabilities = attribute.dataType.capabilities;
-
-    if (capabilities.contains(DataTypeCapability.lengthFirst)) {
-      if (capabilities.contains(DataTypeCapability.lengthSecond)) {
-        return '${attribute.dataType.name}(${attribute.setLengthFirst}, ${attribute.setLengthSecond})';
-      }
-
-      return '${attribute.dataType.name}(${attribute.setLengthFirst})';
-    }
-
-    if (capabilities.contains(DataTypeCapability.rangeInText)) {
-      return '${attribute.dataType.name}(${attribute.setRangeInString})';
-    }
-
-    return attribute.dataType.name;
   }
 }

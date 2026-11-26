@@ -14,27 +14,3 @@ class ViewerBackground {
     this.image = const AssetImage('assets/default_background.png'),
   });
 }
-
-Widget buildBackground(
-  BuildContext context,
-  ViewerBackground viewerBackground,
-) {
-  return Container(
-    decoration: BoxDecoration(
-      border: Border.all(
-        color: Colors.black,
-        width: 1,
-      ),
-    ),
-    child: Image(
-      image: viewerBackground.image,
-      fit: viewerBackground.mode == BackgroundMode.stretched
-          ? BoxFit.fill
-          : BoxFit.none,
-      repeat: viewerBackground.mode == BackgroundMode.repeating
-          ? ImageRepeat.repeat
-          : ImageRepeat.noRepeat,
-      alignment: Alignment.topLeft,
-    ),
-  );
-}

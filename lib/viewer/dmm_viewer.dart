@@ -1,7 +1,7 @@
-import 'package:tdmm/helper.dart';
 import 'package:tdmm/viewer/viewer_background.dart';
+import 'package:tdmm/viewer/viewer_background_layer.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
-import 'package:tdmm/viewer/viewer_scales.dart';
+import 'package:tdmm/viewer/viewer_resize_handle.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
 class DMMViewer extends StatefulWidget {
@@ -53,14 +53,14 @@ class DiagramViewerState extends State<DMMViewer> {
                   onPointerDown: (details) {
                     widget.onViewerClick(details.localPosition);
                   },
-                  child: buildBackground(context, widget.background),
+                  child: ViewerBackgroundLayer(viewerBackground: widget.background,),
                 ),
               ),
 
               for (int i = 0; i < widget.elements.length; i++)
                 widget.elements[i],
 
-              buildRightScale(
+              buildResizeHandle(
                 PositionInfo(
                   top: 0,
                   right: -5,
@@ -68,9 +68,11 @@ class DiagramViewerState extends State<DMMViewer> {
                   height: widget.viewerSize.height,
                 ),
                 widget.onViewerResize,
+                ResizeHandleLocation.right,
+                SystemMouseCursors.resizeRight,
               ),
 
-              buildBottomScale(
+              buildResizeHandle(
                 PositionInfo(
                   left: 0,
                   bottom: -5,
@@ -78,9 +80,11 @@ class DiagramViewerState extends State<DMMViewer> {
                   height: 10,
                 ),
                 widget.onViewerResize,
+                ResizeHandleLocation.bottom,
+                SystemMouseCursors.resizeDown,
               ),
 
-              buildBottomRightScale(
+              buildResizeHandle(
                 PositionInfo(
                   right: -6,
                   bottom: -6,
@@ -88,6 +92,8 @@ class DiagramViewerState extends State<DMMViewer> {
                   height: 14,
                 ),
                 widget.onViewerResize,
+                ResizeHandleLocation.bottomRight,
+                SystemMouseCursors.resizeDownRight
               ),
             ],
           ),
