@@ -1,3 +1,5 @@
+import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
+import 'package:tdmm/diagram/diagram_data/data_type_limitations.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
 import 'package:fluent_ui/fluent_ui.dart';
@@ -11,6 +13,7 @@ class DiagramTable extends ViewerElement {
   final VoidCallback onDoubleTap;
   final VoidCallback onDelete;
   final VoidCallback onDuplicate;
+  final void Function(Offset position) onShowContextMenu;
 
   const DiagramTable({
     super.key,
@@ -22,44 +25,8 @@ class DiagramTable extends ViewerElement {
     required this.onDoubleTap,
     required this.onDelete,
     required this.onDuplicate,
+    required this.onShowContextMenu,
   });
-
-  Future<void> showContextMenu(
-    BuildContext context,
-    Offset position,
-  ) async {
-    final controller = FlyoutController();
-
-    try {
-      await controller.showFlyout<void>(
-        position: position,
-        builder: (context) {
-          return MenuFlyout(
-            items: [
-              MenuFlyoutItem(
-                leading: const Icon(FluentIcons.edit),
-                text: const Text('Upravit'),
-                onPressed: onDoubleTap,
-              ),
-              MenuFlyoutItem(
-                leading: const Icon(FluentIcons.copy),
-                text: const Text('Duplikovat'),
-                onPressed: onDuplicate,
-              ),
-              const MenuFlyoutSeparator(),
-              MenuFlyoutItem(
-                leading: const Icon(FluentIcons.delete),
-                text: const Text('Smazat'),
-                onPressed: onDelete,
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      controller.dispose();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,10 +53,7 @@ class DiagramTable extends ViewerElement {
                 onPanUpdate: (details) => onMove(details.delta),
                 onDoubleTap: onDoubleTap,
                 onSecondaryTapDown: (details) {
-                  showContextMenu(
-                    context,
-                    details.globalPosition,
-                  );
+                  onShowContextMenu(details.globalPosition);
                 },
                 child: Container(
                   decoration: BoxDecoration(
@@ -153,7 +117,7 @@ class DiagramTable extends ViewerElement {
                                     ),
                                     child: Text(
                                       '${attribute.name} '
-                                      '${attribute.dataType.name}',
+                                      '${getAttributeTypeName(attribute)}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: theme.typography.caption,
@@ -204,5 +168,23 @@ class DiagramTable extends ViewerElement {
         ),
       ),
     );
+  }
+
+  String getAttributeTypeName(AttributeData attribute) {
+    final capabilities = attribute.dataType.capabilities;
+
+    if (capabilities.contains(DataTypeCapability.lengthFirst)) {
+      if (capabilities.contains(DataTypeCapability.lengthSecond)) {
+        return '${attribute.dataType.name}(${attribute.setLengthFirst}, ${attribute.setLengthSecond})';
+      }
+
+      return '${attribute.dataType.name}(${attribute.setLengthFirst})';
+    }
+
+    if (capabilities.contains(DataTypeCapability.rangeInText)) {
+      return '${attribute.dataType.name}(${attribute.setRangeInString})';
+    }
+
+    return attribute.dataType.name;
   }
 }

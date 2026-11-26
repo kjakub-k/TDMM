@@ -12,7 +12,7 @@ class TableData {
   TableData({
     required this.position,
     this.size = const Size(200, 100),
-    this.name = 'Table',
+    this.name = 'Tabulka',
     List<AttributeData>? attributes,
   }) : attributes = attributes ?? [
       AttributeData(
@@ -21,7 +21,7 @@ class TableData {
         key: KeyTypeData.primary
       ),
       AttributeData(
-        name: "name",
+        name: "nazev",
         dataType: DataTypeData.varchar
       ),
     ];

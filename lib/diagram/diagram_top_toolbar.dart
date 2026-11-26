@@ -35,7 +35,6 @@ class DiagramTopToolbar extends StatelessWidget {
             title: const Text('Diagram'),
             items: [
               MenuFlyoutItem(
-                leading: const Icon(FluentIcons.a_a_d_logo),
                 text: const Text('Změnit velikost'),
                 onPressed: () async {
                   final newSize = await showDiagramSizeDialog(
@@ -52,7 +51,6 @@ class DiagramTopToolbar extends StatelessWidget {
               const MenuFlyoutSeparator(),
 
               MenuFlyoutItem(
-                leading: const Icon(FluentIcons.file_image),
                 text: const Text('Vybrat pozadí (Opakovaný)'),
                 onPressed: () async {
                   final newBackground = await chooseBackground(
@@ -67,7 +65,6 @@ class DiagramTopToolbar extends StatelessWidget {
               ),
 
               MenuFlyoutItem(
-                leading: const Icon(FluentIcons.picture),
                 text: const Text('Vybrat pozadí (Roztáhnutý)'),
                 onPressed: () async {
                   final newBackground = await chooseBackground(
@@ -81,6 +78,29 @@ class DiagramTopToolbar extends StatelessWidget {
                 },
               ),
             ],
+          ),
+          DropDownButton(
+            title: const Text('Soubor'),
+            items: [
+              MenuFlyoutItem(
+                text: const Text('Uložit'),
+                onPressed: () async {
+                  
+                },
+              ),
+              MenuFlyoutItem(
+                text: const Text('Uložit jako...'),
+                onPressed: () async {
+                  
+                },
+              ),
+              MenuFlyoutItem(
+                text: const Text('Načíst'),
+                onPressed: () async {
+                  
+                },
+              ),
+            ]
           ),
         ],
       ),

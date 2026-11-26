@@ -196,7 +196,6 @@ class DataTypeData {
   static const interval = DataTypeData(
     name: "INTERVAL",
     capabilities: [
-      DataTypeCapability.lengthFirst,
       DataTypeCapability.rangeInText
     ],
     category: "Date & Time"
