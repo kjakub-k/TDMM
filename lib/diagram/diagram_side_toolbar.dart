@@ -1,13 +1,16 @@
 import 'package:tdmm/diagram/diagram_mode.dart';
+import 'package:tdmm/diagram/diagram_table/diagram_table.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 
 class DiagramSideToolbar extends StatelessWidget {
   final ValueChanged<DiagramMode> onDiagramModeChanged;
+  final VoidCallback? onCancelRelationshipMode;
   final DiagramMode currentDiagramMode;
 
   const DiagramSideToolbar({
     super.key,
     required this.onDiagramModeChanged,
+    this.onCancelRelationshipMode,
     required this.currentDiagramMode,
   });
 
@@ -46,30 +49,42 @@ class DiagramSideToolbar extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          SideToolbarButton(
-            diagramMode: DiagramMode.placeOneToOne,
-            onDiagramModeChanged: onDiagramModeChanged,
-            imagePath: 'assets/one_to_one.png',
-            currentDiagramMode: currentDiagramMode,
+          TapRegion(
+            groupId: relationshipTapGroupId,
+            onTapOutside: (_) {
+              if (currentDiagramMode.isRelationshipMode) {
+                onCancelRelationshipMode?.call();
+              }
+            },
+            child: Column(
+              children: [
+                SideToolbarButton(
+                  diagramMode: DiagramMode.placeOneToOne,
+                  onDiagramModeChanged: onDiagramModeChanged,
+                  imagePath: 'assets/one_to_one.png',
+                  currentDiagramMode: currentDiagramMode,
+                ),
+
+                const SizedBox(height: 12),
+
+                SideToolbarButton(
+                  diagramMode: DiagramMode.placeOneToMany,
+                  onDiagramModeChanged: onDiagramModeChanged,
+                  imagePath: 'assets/one_to_many.png',
+                  currentDiagramMode: currentDiagramMode,
+                ),
+
+                const SizedBox(height: 12),
+
+                SideToolbarButton(
+                  diagramMode: DiagramMode.placeManyToMany,
+                  onDiagramModeChanged: onDiagramModeChanged,
+                  imagePath: 'assets/many_to_many.png',
+                  currentDiagramMode: currentDiagramMode,
+                ),
+              ],
+            ),
           ),
-
-          const SizedBox(height: 12),
-
-          SideToolbarButton(
-            diagramMode: DiagramMode.placeOneToMany,
-            onDiagramModeChanged: onDiagramModeChanged,
-            imagePath: 'assets/one_to_many.png',
-            currentDiagramMode: currentDiagramMode,
-          ),
-
-          const SizedBox(height: 12),
-
-          SideToolbarButton(
-            diagramMode: DiagramMode.placeManyToMany,
-            onDiagramModeChanged: onDiagramModeChanged,
-            imagePath: 'assets/many_to_many.png',
-            currentDiagramMode: currentDiagramMode,
-          )
         ],
       ),
     );

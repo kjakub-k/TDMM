@@ -134,6 +134,11 @@ class DiagramTablePropertiesPanelState extends State<DiagramTablePropertiesPanel
                   canMoveUp: index > 0,
                   canMoveDown: index < attributes.length - 1,
                   onChanged: widget.controller.notifyTableEdited,
+                  onKeyChanged: (newKey) => widget.controller.setAttributeKey(
+                    widget.table.id,
+                    attribute.id,
+                    newKey,
+                  ),
                   onMoveUp: () => widget.controller
                       .moveAttribute(widget.table.id, index, -1),
                   onMoveDown: () => widget.controller

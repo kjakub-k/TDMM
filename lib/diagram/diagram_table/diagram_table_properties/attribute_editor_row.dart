@@ -10,6 +10,7 @@ class AttributeEditorRow extends StatefulWidget {
   final bool canMoveUp;
   final bool canMoveDown;
   final VoidCallback onChanged;
+  final ValueChanged<KeyTypeData?> onKeyChanged;
   final VoidCallback onMoveUp;
   final VoidCallback onMoveDown;
   final VoidCallback onDelete;
@@ -20,6 +21,7 @@ class AttributeEditorRow extends StatefulWidget {
     required this.canMoveUp,
     required this.canMoveDown,
     required this.onChanged,
+    required this.onKeyChanged,
     required this.onMoveUp,
     required this.onMoveDown,
     required this.onDelete,
@@ -107,13 +109,23 @@ class _AttributeEditorRowState extends State<AttributeEditorRow> {
               const SizedBox(width: 8),
             ],
 
-            _ConstraintCheckbox(
-              label: 'PRIMARY KEY',
-              value: attr.key == KeyTypeData.primary,
-              onChanged: (v) => _updateAttribute(
-                () => attr.key = v ? KeyTypeData.primary : null,
+            if (attr.key == KeyTypeData.foreign)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Text(
+                  'FOREIGN KEY',
+                  style: theme.typography.caption,
+                  softWrap: false,
+                ),
+              )
+            else
+              _ConstraintCheckbox(
+                label: 'PRIMARY KEY',
+                value: attr.key == KeyTypeData.primary,
+                onChanged: (v) => widget.onKeyChanged(
+                  v ? KeyTypeData.primary : null,
+                ),
               ),
-            ),
             if (attr.key == null) ...[
               _ConstraintCheckbox(
                 label: 'NOT NULL',

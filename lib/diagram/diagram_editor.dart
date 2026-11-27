@@ -1,5 +1,10 @@
+import 'dart:async';
+
 import 'package:tdmm/diagram/diagram_controller.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
+import 'package:tdmm/diagram/diagram_mode.dart';
+import 'package:tdmm/diagram/diagram_relationships/diagram_relationship_painter.dart';
+import 'package:tdmm/diagram/diagram_relationships/relationship_floating_panel.dart';
 import 'package:tdmm/diagram/diagram_table/diagram_table.dart';
 import 'package:tdmm/diagram/diagram_table/diagram_table_properties/diagram_table_properties_panel.dart';
 import 'package:tdmm/viewer/dmm_viewer.dart';
@@ -28,6 +33,8 @@ class DiagramEditorState extends State<DiagramEditor> {
   late final DiagramController diagramController;
   late final FlyoutController flyoutController;
   late final FocusNode editorFocusNode;
+  late final GlobalKey<DiagramViewerState> viewerKey;
+  Timer? _autoSaveTimer;
 
   @override
   void initState() {
@@ -35,9 +42,12 @@ class DiagramEditorState extends State<DiagramEditor> {
     editorFocusNode = FocusNode();
     diagramController = DiagramController(initialCanvasSize: widget.setSize);
     flyoutController = FlyoutController();
+    viewerKey = GlobalKey<DiagramViewerState>();
   }
+
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
     editorFocusNode.dispose();
     diagramController.dispose();
     flyoutController.dispose();
@@ -52,12 +62,32 @@ class DiagramEditorState extends State<DiagramEditor> {
       return KeyEventResult.ignored;
     }
 
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      if (diagramController.mode != DiagramMode.select ||
+          diagramController.pendingSourceAttributeId != null) {
+        diagramController.cancelModeToSelect();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    }
+
+    final primaryWidget = FocusManager.instance.primaryFocus?.context?.widget;
+    final isEditingText = primaryWidget is EditableText;
+
+    if (!isEditingText && event.logicalKey == LogicalKeyboardKey.delete) {
+      if (diagramController.selectedTableId != null ||
+          diagramController.selectedRelationshipId != null) {
+        diagramController.deleteSelected();
+        return KeyEventResult.handled;
+      }
+    }
+
     if (!HardwareKeyboard.instance.isControlPressed) {
       return KeyEventResult.ignored;
     }
 
     if (event.logicalKey == LogicalKeyboardKey.keyX) {
-      diagramController.deleteSelectedTable();
+      diagramController.deleteSelected();
       return KeyEventResult.handled;
     }
 
@@ -70,8 +100,8 @@ class DiagramEditorState extends State<DiagramEditor> {
   }
 
   void showTableContextMenu(
-  Offset position,
-  TableData table,
+    Offset position,
+    TableData table,
   ) {
     flyoutController.showFlyout<void>(
       position: position,
@@ -100,12 +130,49 @@ class DiagramEditorState extends State<DiagramEditor> {
     );
   }
 
+  Future<void> showRelationshipContextMenu(
+    Offset fallbackPosition,
+    String relationshipId,
+  ) async {
+    final midCanvas = diagramController.getRelationshipMidpoint(relationshipId);
+    final midGlobal = midCanvas != null
+        ? viewerKey.currentState?.canvasToGlobal(midCanvas)
+        : null;
+    final anchorPosition = (midGlobal ?? fallbackPosition) - const Offset(0, 14);
+
+    await flyoutController.showFlyout<void>(
+      position: anchorPosition,
+      placementMode: FlyoutPlacementMode.topCenter,
+      builder: (flyoutContext) {
+        return ListenableBuilder(
+          listenable: diagramController,
+          builder: (context, _) {
+            return RelationshipFloatingPanel(
+              controller: diagramController,
+              relationshipId: relationshipId,
+              onDeleted: () => Navigator.of(flyoutContext).maybePop(),
+            );
+          },
+        );
+      },
+    );
+
+    if (diagramController.selectedRelationshipId == relationshipId) {
+      diagramController.selectRelationship(null);
+    }
+  }
+
   List<DiagramTable> buildTables() {
+    final relationships = diagramController.relationships;
     return [
       for (final table in diagramController.tables)
         DiagramTable(
           key: ValueKey(table.id),
           table: table,
+          relationships: relationships,
+          mode: diagramController.mode,
+          pendingSourceTableId: diagramController.pendingSourceTableId,
+          pendingSourceAttributeId: diagramController.pendingSourceAttributeId,
           selected: diagramController.selectedTableId == table.id,
           onSelect: () {
             editorFocusNode.requestFocus();
@@ -117,12 +184,25 @@ class DiagramEditorState extends State<DiagramEditor> {
           onDelete: () => diagramController.deleteTable(table.id),
           onDuplicate: () => diagramController.duplicateTable(table.id),
           onShowContextMenu: (position) => showTableContextMenu(position, table),
+          onAttributeTap: (attributeId) {
+            editorFocusNode.requestFocus();
+            diagramController.handleRelationshipAttributeTap(
+              table.id,
+              attributeId,
+            );
+          },
+          onTableTap: () {
+            editorFocusNode.requestFocus();
+            diagramController.handleRelationshipTableTap(table.id);
+          },
         ),
     ];
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = FluentTheme.of(context);
+
     return Focus(
       focusNode: editorFocusNode,
       autofocus: true,
@@ -135,93 +215,125 @@ class DiagramEditorState extends State<DiagramEditor> {
           return NavigationView(
             content: ScaffoldPage(
               padding: EdgeInsets.zero,
-              content: Focus(
-                autofocus: true,
-                onKeyEvent: handleKeyEvent,
-                child: Row(
-                  children: [
-                    DiagramSideToolbar(
-                      currentDiagramMode: diagramController.mode,
-                      onDiagramModeChanged: diagramController.setMode,
-                    ),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          DiagramTopToolbar(
-                            viewerBackground: diagramController.background,
-                            onBackgroundChanged: diagramController.setBackground,
-                            viewerSize: diagramController.canvasSize,
-                            onViewerSizeChanged: diagramController.setCanvasSize,
-                          ),
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: FlyoutTarget(
-                                    controller: flyoutController,
-                                    child: DMMViewer(
-                                      viewerSize: diagramController.canvasSize,
-                                      background: diagramController.background,
-                                      elements: buildTables(),
-                                      onViewerClick: (pos) {
-                                        editorFocusNode.requestFocus();
-                                        diagramController.handleCanvasClick(pos);
-                                      },
-                                      onViewerResize: diagramController.resizeCanvas,
+              content: Row(
+                children: [
+                  DiagramSideToolbar(
+                    currentDiagramMode: diagramController.mode,
+                    onDiagramModeChanged: (newMode) {
+                      editorFocusNode.requestFocus();
+                      diagramController.setMode(newMode);
+                    },
+                    onCancelRelationshipMode:
+                        diagramController.cancelModeToSelect,
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        DiagramTopToolbar(
+                          viewerBackground: diagramController.background,
+                          onBackgroundChanged: diagramController.setBackground,
+                          viewerSize: diagramController.canvasSize,
+                          onViewerSizeChanged: diagramController.setCanvasSize,
+                          onSave: () => {},
+                          onSaveAs: () => {},
+                          onLoad: () => {},
+                          onExport: () => {},
+                        ),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: FlyoutTarget(
+                                  controller: flyoutController,
+                                  child: DMMViewer(
+                                    key: viewerKey,
+                                    viewerSize: diagramController.canvasSize,
+                                    background: diagramController.background,
+                                    relationshipLayer: CustomPaint(
+                                      painter: DiagramRelationshipPainter(
+                                        tables: diagramController.tables,
+                                        relationships:
+                                            diagramController.relationships,
+                                        selectedRelationshipId:
+                                            diagramController
+                                                .selectedRelationshipId,
+                                        accentColor: theme.accentColor,
+                                      ),
                                     ),
+                                    elements: buildTables(),
+                                    onViewerClick: (pos) {
+                                      editorFocusNode.requestFocus();
+                                      diagramController.handleCanvasClick(pos);
+                                    },
+                                    onViewerTap: (localPos, globalPos) {
+                                      if (diagramController.mode !=
+                                          DiagramMode.select) {
+                                        return;
+                                      }
+                                      final hitRel = diagramController
+                                          .hitTestRelationship(localPos);
+                                      if (hitRel != null) {
+                                        showRelationshipContextMenu(
+                                          globalPos,
+                                          hitRel.id,
+                                        );
+                                      }
+                                    },
+                                    onViewerResize:
+                                        diagramController.resizeCanvas,
                                   ),
-                                ),
-                                if (editingTable != null)
-                                  Positioned(
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    height: propertiesPanelHeight,
-                                    child: DiagramTablePropertiesPanel(
-                                      table: editingTable,
-                                      controller: diagramController,
-                                      onResizeDelta: (delta) {
-                                        setState(() {
-                                          propertiesPanelHeight =
-                                              (propertiesPanelHeight - delta)
-                                                  .clamp(
-                                                    minPropertiesPanelHeight,
-                                                    maxPropertiesPanelHeight,
-                                                  );
-                                        });
-                                      },
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            height: 30,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border(
-                                top: BorderSide(
-                                  color: Colors.black,
                                 ),
                               ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Spacer(),
-                                Text(
-                                  '${diagramController.canvasSize.width.toInt()} × ${diagramController.canvasSize.height.toInt()}',
-                                )
-                              ],
+                              if (editingTable != null)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: 0,
+                                  height: propertiesPanelHeight,
+                                  child: DiagramTablePropertiesPanel(
+                                    table: editingTable,
+                                    controller: diagramController,
+                                    onResizeDelta: (delta) {
+                                      setState(() {
+                                        propertiesPanelHeight =
+                                            (propertiesPanelHeight - delta)
+                                                .clamp(
+                                                  minPropertiesPanelHeight,
+                                                  maxPropertiesPanelHeight,
+                                                );
+                                      });
+                                    },
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          height: 30,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border(
+                              top: BorderSide(
+                                color: Colors.black,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            children: [
+                              const Spacer(),
+                              Text(
+                                '${diagramController.canvasSize.width.toInt()} × ${diagramController.canvasSize.height.toInt()}',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
