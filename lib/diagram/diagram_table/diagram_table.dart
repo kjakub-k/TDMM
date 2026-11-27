@@ -4,6 +4,7 @@ import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/diagram/diagram_mode.dart';
 import 'package:tdmm/diagram/diagram_relationships/diagram_relationship_data.dart';
 import 'package:tdmm/diagram/diagram_relationships/diagram_relationship_layout.dart';
+import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
 
 const Object relationshipTapGroupId = 'relationship-mode-tap-group';
@@ -203,16 +204,12 @@ class DiagramTable extends ViewerElement {
     final canPickThisRow =
         isPickingAttribute && isPrimary && table.id != pendingSourceTableId;
 
-    final keyPrefix = isPrimary
-        ? 'PK '
-        : isForeign
-        ? 'FK '
-        : '';
+    final isKey = isPrimary || isForeign;
 
     final rowContent = Container(
       height: rowHeight,
       alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: isPendingSource
           ? BoxDecoration(
               color: theme.accentColor.withValues(alpha: 0.16),
@@ -222,14 +219,22 @@ class DiagramTable extends ViewerElement {
               color: theme.accentColor.withValues(alpha: 0.06),
             )
           : null,
-      child: Text(
-        '$keyPrefix${attribute.name} ${attribute.getDataTypeName()}',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: theme.typography.caption?.copyWith(
-          fontWeight: isPendingSource ? FontWeight.w600 : null,
-          color: isPendingSource ? theme.accentColor : null,
-        ),
+      child: Row(
+        children: [
+          _buildAttributeIcon(attribute, isKey: isKey),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '${attribute.name} ${attribute.getDataTypeName()}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.typography.caption?.copyWith(
+                fontWeight: isPendingSource ? FontWeight.w600 : null,
+                color: isPendingSource ? theme.accentColor : null,
+              ),
+            ),
+          ),
+        ],
       ),
     );
 
@@ -245,6 +250,59 @@ class DiagramTable extends ViewerElement {
         behavior: HitTestBehavior.opaque,
         onTap: () => onAttributeTap(attribute.id),
         child: rowContent,
+      ),
+    );
+  }
+
+  Widget _buildAttributeIcon(AttributeData attribute, {required bool isKey}) {
+    final String assetPath = switch (attribute.key) {
+      KeyTypeData.primary => 'assets/primary_key.png',
+      KeyTypeData.foreign => 'assets/foreign_key.png',
+      null => 'assets/diamond.png',
+    };
+
+    final String? topLeft = attribute.isUnsigned
+        ? 'US'
+        : (attribute.hasTimezone ? 'TZ' : null);
+    final String? topRight = !isKey && attribute.isNotNull ? 'NN' : null;
+    final String? bottomLeft = attribute.isAutoIncremental ? 'AI' : null;
+    final String? bottomRight = !isKey && attribute.isUnique ? 'UQ' : null;
+
+    return SizedBox(
+      width: 26,
+      height: 22,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(
+            child: Image.asset(
+              assetPath,
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
+            ),
+          ),
+          _cornerBadge(topLeft, Alignment.topLeft),
+          _cornerBadge(topRight, Alignment.topRight),
+          _cornerBadge(bottomLeft, Alignment.bottomLeft),
+          _cornerBadge(bottomRight, Alignment.bottomRight),
+        ],
+      ),
+    );
+  }
+
+  Widget _cornerBadge(String? label, Alignment alignment) {
+    if (label == null) return const SizedBox.shrink();
+    return Align(
+      alignment: alignment,
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 6.5,
+          height: 1.0,
+          fontWeight: FontWeight.w700,
+          color: Colors.black,
+        ),
       ),
     );
   }
