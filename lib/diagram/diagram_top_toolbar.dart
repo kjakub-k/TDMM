@@ -10,7 +10,8 @@ class DiagramTopToolbar extends StatelessWidget {
   final VoidCallback? onSave;
   final VoidCallback? onSaveAs;
   final VoidCallback? onLoad;
-  final VoidCallback? onExport;
+  final VoidCallback? onExportPng;
+  final VoidCallback? onExportJpeg;
 
   const DiagramTopToolbar({
     super.key,
@@ -21,7 +22,8 @@ class DiagramTopToolbar extends StatelessWidget {
     this.onSave,
     this.onSaveAs,
     this.onLoad,
-    this.onExport,
+    this.onExportPng,
+    this.onExportJpeg,
   });
 
   @override
@@ -44,21 +46,25 @@ class DiagramTopToolbar extends StatelessWidget {
             items: [
               MenuFlyoutItem(
                 text: const Text('Uložit'),
-                onPressed: onSave != null ? () => onSave!() : null,
+                onPressed: onSave,
               ),
               MenuFlyoutItem(
                 text: const Text('Uložit jako...'),
-                onPressed: onSaveAs != null ? () => onSaveAs!() : null,
+                onPressed: onSaveAs,
               ),
               MenuFlyoutItem(
                 text: const Text('Načíst'),
-                onPressed: onLoad != null ? () => onLoad!() : null,
+                onPressed: onLoad,
               ),
               const MenuFlyoutSeparator(),
               MenuFlyoutItem(
-                text: const Text('Exportovat'),
-                onPressed: onExport != null ? () => onExport!() : null,
+                text: const Text('Exportovat do PNG'),
+                onPressed: onExportPng,
               ),
+              MenuFlyoutItem(
+                text: const Text('Exportovat do JPEG'), 
+                onPressed: onExportJpeg
+                )
             ]
           ),
 

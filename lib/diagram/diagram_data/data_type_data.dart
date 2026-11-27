@@ -22,6 +22,13 @@ class DataTypeData {
     return groups;
   }
 
+  static DataTypeData fromName(String? name) {
+    return values.firstWhere(
+      (type) => type.name == name,
+      orElse: () => integer,
+    );
+  }
+
   static const List<DataTypeData> values = [
     // Numeric
     smallint,

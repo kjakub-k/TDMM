@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
 import 'package:tdmm/viewer/viewer_background.dart';
 import 'package:tdmm/viewer/viewer_background_layer.dart';
 import 'package:tdmm/viewer/viewer_element.dart';
@@ -34,6 +36,13 @@ class DiagramViewerState extends State<DMMViewer> {
   final GlobalKey _canvasKey = GlobalKey();
   final GlobalKey _repaintKey = GlobalKey();
   Offset? _pointerDownLocal;
+
+  Future<ui.Image?> captureImage({double pixelRatio = 1.0}) async {
+    final boundary =
+        _repaintKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null) return null;
+    return boundary.toImage(pixelRatio: pixelRatio);
+  }
 
   Offset? canvasToGlobal(Offset canvasPoint) {
     final box = _canvasKey.currentContext?.findRenderObject() as RenderBox?;

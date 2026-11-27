@@ -730,4 +730,64 @@ class DiagramController extends ChangeNotifier {
 
     if (notify) notifyListeners();
   }
+
+  Map<String, dynamic> toJson() => {
+    'format': 'tdmm',
+    'version': 1,
+    'canvasSize': {
+      'width': _canvasSize.width,
+      'height': _canvasSize.height,
+    },
+    'background': _background.toJson(),
+    'tables': _tables.map((t) => t.toJson()).toList(),
+    'relationships': _relationships.map((r) => r.toJson()).toList(),
+  };
+
+  void loadFromJson(Map<String, dynamic> json) {
+    if (json['format'] != 'tdmm') {
+      throw const FormatException('Neplatný formát souboru (.tdmm).');
+    }
+
+    final sizeJson = json['canvasSize'] as Map<String, dynamic>;
+    final nextCanvasSize = Size(
+      (sizeJson['width'] as num).toDouble().clamp(minCanvasWidth, 10000.0),
+      (sizeJson['height'] as num).toDouble().clamp(minCanvasHeight, 10000.0),
+    );
+
+    final nextBackground = json['background'] is Map<String, dynamic>
+        ? ViewerBackground.fromJson(json['background'] as Map<String, dynamic>)
+        : ViewerBackground();
+
+    final nextTables = (json['tables'] as List<dynamic>? ?? const [])
+        .map((t) => TableData.fromJson(t as Map<String, dynamic>))
+        .toList();
+
+    final nextRelationships =
+        (json['relationships'] as List<dynamic>? ?? const [])
+            .map(
+              (r) => DiagramRelationshipData.fromJson(r as Map<String, dynamic>),
+            )
+            .toList();
+
+    for (final table in nextTables) {
+      _ensureTableFits(table);
+    }
+
+    _tables
+      ..clear()
+      ..addAll(nextTables);
+    _relationships
+      ..clear()
+      ..addAll(nextRelationships);
+    _canvasSize = nextCanvasSize;
+    _background = nextBackground;
+
+    _selectedTableId = null;
+    _selectedRelationshipId = null;
+    _editingTableId = null;
+    _clearPendingRelationship();
+    _mode = DiagramMode.select;
+
+    notifyListeners();
+  }
 }

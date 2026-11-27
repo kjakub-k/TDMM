@@ -48,4 +48,34 @@ class TableData {
       attributes: clonedAttributes,
     );
   } 
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'position': {'dx': position.dx, 'dy': position.dy},
+    'size': {'width': size.width, 'height': size.height},
+    'attributes': attributes.map((a) => a.toJson()).toList(),
+  };
+
+  factory TableData.fromJson(Map<String, dynamic> json) {
+    final pos = json['position'] as Map<String, dynamic>;
+    final sz = json['size'] as Map<String, dynamic>;
+    final attrs = (json['attributes'] as List<dynamic>? ?? const [])
+        .map((a) => AttributeData.fromJson(a as Map<String, dynamic>))
+        .toList();
+
+    return TableData(
+      id: json['id'] as String,
+      name: json['name'] as String? ?? 'Tabulka',
+      position: Offset(
+        (pos['dx'] as num).toDouble(),
+        (pos['dy'] as num).toDouble(),
+      ),
+      size: Size(
+        (sz['width'] as num).toDouble(),
+        (sz['height'] as num).toDouble(),
+      ),
+      attributes: attrs,
+    );
+  }
 }

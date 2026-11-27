@@ -74,4 +74,43 @@ class AttributeData {
 
     return dataType.name;
   }
+
+    Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'dataType': dataType.name,
+    'isNotNull': isNotNull,
+    'isUnique': isUnique,
+    'key': key?.name,
+    'isUnsigned': isUnsigned,
+    'isAutoIncremental': isAutoIncremental,
+    'hasTimezone': hasTimezone,
+    'setLengthFirst': setLengthFirst,
+    'setLengthSecond': setLengthSecond,
+    'setRangeInString': setRangeInString,
+    'relationshipId': relationshipId,
+    'referencedTableId': referencedTableId,
+    'referencedAttributeId': referencedAttributeId,
+  };
+
+  factory AttributeData.fromJson(Map<String, dynamic> json) {
+    final keyName = json['key'] as String?;
+    return AttributeData(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      dataType: DataTypeData.fromName(json['dataType'] as String?),
+      isNotNull: json['isNotNull'] as bool? ?? false,
+      isUnique: json['isUnique'] as bool? ?? false,
+      key: keyName == null ? null : KeyTypeData.values.byName(keyName),
+      isUnsigned: json['isUnsigned'] as bool? ?? false,
+      isAutoIncremental: json['isAutoIncremental'] as bool? ?? false,
+      hasTimezone: json['hasTimezone'] as bool? ?? false,
+      setLengthFirst: json['setLengthFirst'] as int? ?? 0,
+      setLengthSecond: json['setLengthSecond'] as int? ?? 0,
+      setRangeInString: json['setRangeInString'] as String? ?? '',
+      relationshipId: json['relationshipId'] as String?,
+      referencedTableId: json['referencedTableId'] as String?,
+      referencedAttributeId: json['referencedAttributeId'] as String?,
+    );
+  }
 }

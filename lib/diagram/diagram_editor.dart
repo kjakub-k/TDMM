@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:tdmm/diagram/diagram_controller.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
+import 'package:tdmm/diagram/diagram_logic.dart';
 import 'package:tdmm/diagram/diagram_mode.dart';
 import 'package:tdmm/diagram/diagram_relationships/diagram_relationship_painter.dart';
 import 'package:tdmm/diagram/diagram_relationships/relationship_floating_panel.dart';
@@ -52,6 +53,62 @@ class DiagramEditorState extends State<DiagramEditor> {
     diagramController.dispose();
     flyoutController.dispose();
     super.dispose();
+  }
+
+  String? _currentFilePath;
+
+  Future<void> _saveDiagram({bool saveAs = false}) async {
+    final savedPath = await saveDiagramTdmm(
+      diagramController.toJson(),
+      existingPath: saveAs ? null : _currentFilePath,
+    );
+    if (savedPath != null && mounted) {
+      setState(() => _currentFilePath = savedPath);
+    }
+  }
+
+  Future<void> _loadDiagram() async {
+    try {
+      final result = await loadDiagramTdmm();
+      if (result == null) return;
+
+      diagramController.loadFromJson(result.data);
+      if (mounted) {
+        setState(() => _currentFilePath = result.path);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: const Text('Chyba při načítání'),
+          content: Text('Soubor se nepodařilo načíst: $e'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _exportDiagram(DiagramExportFormat format) async {
+    if (diagramController.selectedTableId != null ||
+        diagramController.selectedRelationshipId != null) {
+      diagramController.selectTable(null);
+      await WidgetsBinding.instance.endOfFrame;
+    }
+
+    final image = await viewerKey.currentState?.captureImage();
+    if (image == null) return;
+
+    try {
+      await exportDiagramImage(image, format: format);
+    } finally {
+      image.dispose();
+    }
   }
 
   KeyEventResult handleKeyEvent(
@@ -234,10 +291,11 @@ class DiagramEditorState extends State<DiagramEditor> {
                           onBackgroundChanged: diagramController.setBackground,
                           viewerSize: diagramController.canvasSize,
                           onViewerSizeChanged: diagramController.setCanvasSize,
-                          onSave: () => {},
-                          onSaveAs: () => {},
-                          onLoad: () => {},
-                          onExport: () => {},
+                          onSave: () => _saveDiagram(),
+                          onSaveAs: () => _saveDiagram(saveAs: true),
+                          onLoad: _loadDiagram,
+                          onExportJpeg: () => _exportDiagram(DiagramExportFormat.jpeg),
+                          onExportPng: () => _exportDiagram(DiagramExportFormat.png),
                         ),
                         Expanded(
                           child: Stack(
