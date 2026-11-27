@@ -227,7 +227,7 @@ class DiagramTable extends ViewerElement {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: theme.typography.caption?.copyWith(
-          fontWeight: isPendingSource || isPrimary ? FontWeight.w600 : null,
+          fontWeight: isPendingSource ? FontWeight.w600 : null,
           color: isPendingSource ? theme.accentColor : null,
         ),
       ),

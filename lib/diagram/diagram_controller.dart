@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:tdmm/diagram/diagram_data/attribute_data.dart';
+import 'package:tdmm/diagram/diagram_data/data_type_capability.dart';
 import 'package:tdmm/diagram/diagram_data/key_type_data.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
 import 'package:tdmm/diagram/diagram_mode.dart';
@@ -789,5 +790,88 @@ class DiagramController extends ChangeNotifier {
     _mode = DiagramMode.select;
 
     notifyListeners();
+  }
+
+  Map<String, dynamic> toSchemaJson() {
+    final tableById = <String, TableData>{
+      for (final table in _tables) table.id: table,
+    };
+    final attributeById = <String, AttributeData>{
+      for (final table in _tables)
+        for (final attr in table.attributes) attr.id: attr,
+    };
+
+    return {
+      'format': 'tdmm-schema',
+      'version': 1,
+      'tables': [
+        for (final table in _tables)
+          {
+            'name': table.name,
+            'attributes': [
+              for (final attr in table.attributes)
+                _attributeToSchemaJson(attr, tableById, attributeById),
+            ],
+          },
+      ],
+      'relationships': [
+        for (final rel in _relationships)
+          if (tableById[rel.sourceTableId] != null &&
+              attributeById[rel.sourceAttributeId] != null &&
+              tableById[rel.destinationTableId] != null &&
+              attributeById[rel.destinationAttributeId] != null)
+            {
+              'source': {
+                'table': tableById[rel.sourceTableId]!.name,
+                'column': attributeById[rel.sourceAttributeId]!.name,
+              },
+              'destination': {
+                'table': tableById[rel.destinationTableId]!.name,
+                'column': attributeById[rel.destinationAttributeId]!.name,
+              },
+              'cardinality': rel.cardinality.name,
+              'isSourceOptional': rel.isSourceOptional,
+              'isDestinationOptional': rel.isDestinationOptional,
+              'isTransferable': rel.isTransferable,
+            },
+      ],
+    };
+  }
+
+  Map<String, dynamic> _attributeToSchemaJson(
+    AttributeData attr,
+    Map<String, TableData> tableById,
+    Map<String, AttributeData> attributeById,
+  ) {
+    final caps = attr.dataType.capabilities;
+    final refTable = tableById[attr.referencedTableId];
+    final refAttr = attributeById[attr.referencedAttributeId];
+
+    return {
+      'name': attr.name,
+      'type': attr.dataType.name,
+      'formattedType': attr.getDataTypeName(),
+      if (attr.key != null) 'key': attr.key!.name,
+      'isNotNull': attr.isNotNull,
+      'isUnique': attr.isUnique,
+      if (caps.contains(DataTypeCapability.unsigned))
+        'isUnsigned': attr.isUnsigned,
+      if (caps.contains(DataTypeCapability.autoIncrement))
+        'isAutoIncremental': attr.isAutoIncremental,
+      if (caps.contains(DataTypeCapability.timezone))
+        'hasTimezone': attr.hasTimezone,
+      if (caps.contains(DataTypeCapability.lengthFirst))
+        'length': attr.setLengthFirst,
+      if (caps.contains(DataTypeCapability.lengthSecond))
+        'scale': attr.setLengthSecond,
+      if (caps.contains(DataTypeCapability.rangeInText) &&
+          attr.setRangeInString.isNotEmpty)
+        'range': attr.setRangeInString,
+      if (attr.key == KeyTypeData.foreign && refTable != null && refAttr != null)
+        'references': {
+          'table': refTable.name,
+          'column': refAttr.name,
+        },
+    };
   }
 }

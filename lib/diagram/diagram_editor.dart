@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:tdmm/diagram/diagram_controller.dart';
 import 'package:tdmm/diagram/diagram_data/table_data.dart';
@@ -44,6 +45,7 @@ class DiagramEditorState extends State<DiagramEditor> {
     diagramController = DiagramController(initialCanvasSize: widget.setSize);
     flyoutController = FlyoutController();
     viewerKey = GlobalKey<DiagramViewerState>();
+    diagramController.addListener(_scheduleAutoSave);
   }
 
   @override
@@ -52,6 +54,8 @@ class DiagramEditorState extends State<DiagramEditor> {
     editorFocusNode.dispose();
     diagramController.dispose();
     flyoutController.dispose();
+    diagramController.removeListener(_scheduleAutoSave);
+    _autoSaveTimer?.cancel();
     super.dispose();
   }
 
@@ -108,6 +112,33 @@ class DiagramEditorState extends State<DiagramEditor> {
       await exportDiagramImage(image, format: format);
     } finally {
       image.dispose();
+    }
+  }
+
+  String? _lastAutoSavedJson;
+  bool _isAutoSaving = false;
+
+  void _scheduleAutoSave() {
+    if (diagramController.tables.isEmpty &&
+        diagramController.relationships.isEmpty) {
+      return;
+    }
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(seconds: 10), _performAutoSave);
+  }
+
+  Future<void> _performAutoSave() async {
+    if (_isAutoSaving) return;
+    final data = diagramController.toJson();
+    final serialized = jsonEncode(data);
+    if (serialized == _lastAutoSavedJson) return;
+
+    _isAutoSaving = true;
+    try {
+      await writeAutoSaveTdmm(data);
+      _lastAutoSavedJson = serialized;
+    } finally {
+      _isAutoSaving = false;
     }
   }
 
@@ -219,6 +250,10 @@ class DiagramEditorState extends State<DiagramEditor> {
     }
   }
 
+  Future<void> _exportJson() async {
+    await exportDiagramJson(diagramController.toSchemaJson());
+  }
+
   List<DiagramTable> buildTables() {
     final relationships = diagramController.relationships;
     return [
@@ -296,6 +331,7 @@ class DiagramEditorState extends State<DiagramEditor> {
                           onLoad: _loadDiagram,
                           onExportJpeg: () => _exportDiagram(DiagramExportFormat.jpeg),
                           onExportPng: () => _exportDiagram(DiagramExportFormat.png),
+                          onExportJson: () => _exportJson(),
                         ),
                         Expanded(
                           child: Stack(

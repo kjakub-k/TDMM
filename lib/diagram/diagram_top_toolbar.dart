@@ -12,6 +12,7 @@ class DiagramTopToolbar extends StatelessWidget {
   final VoidCallback? onLoad;
   final VoidCallback? onExportPng;
   final VoidCallback? onExportJpeg;
+  final VoidCallback? onExportJson;
 
   const DiagramTopToolbar({
     super.key,
@@ -24,6 +25,7 @@ class DiagramTopToolbar extends StatelessWidget {
     this.onLoad,
     this.onExportPng,
     this.onExportJpeg,
+    this.onExportJson,
   });
 
   @override
@@ -64,7 +66,11 @@ class DiagramTopToolbar extends StatelessWidget {
               MenuFlyoutItem(
                 text: const Text('Exportovat do JPEG'), 
                 onPressed: onExportJpeg
-                )
+              ),
+              MenuFlyoutItem(
+                text: const Text('Exportovat do JSON'), 
+                onPressed: onExportJson
+              )
             ]
           ),
 

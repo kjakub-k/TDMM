@@ -21,13 +21,9 @@ class TableData {
       AttributeData(
         id: Uuid().v4(),
         name: "id",
+        dataType: DataTypeData.serial,
         isNotNull: true,
         key: KeyTypeData.primary
-      ),
-      AttributeData(
-        id: Uuid().v4(),
-        name: "nazev",
-        dataType: DataTypeData.varchar
       ),
     ];
   

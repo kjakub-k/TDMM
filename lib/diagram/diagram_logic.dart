@@ -130,3 +130,66 @@ Future<({String? path, Map<String, dynamic> data})?> loadDiagramTdmm() async {
 
   return (path: file.path, data: decoded);
 }
+
+Future<Uri?> exportDiagramJson(Map<String, dynamic> schemaData) async {
+  final jsonString = const JsonEncoder.withIndent('  ').convert(schemaData);
+  final bytes = Uint8List.fromList(utf8.encode(jsonString));
+
+  return FilePicker.saveFile(
+    dialogTitle: 'Exportovat do JSON',
+    fileName: 'diagram.json',
+    bytes: bytes,
+    mimeType: 'application/json',
+    type: FileType.custom,
+    allowedExtensions: ['json'],
+    windowsOptions: const WindowsOptions(lockParentWindow: true),
+  );
+}
+
+Future<void> writeBytesAtomically(String targetPath, Uint8List bytes) async {
+  final targetFile = File(targetPath);
+  await targetFile.parent.create(recursive: true);
+
+  final tempFile = File('$targetPath.tmp');
+  await tempFile.writeAsBytes(bytes, flush: true);
+  await tempFile.rename(targetPath);
+}
+
+Directory getAutoSaveDirectory() {
+  final base = Platform.environment['LOCALAPPDATA'] ??
+      Platform.environment['HOME'] ??
+      Directory.systemTemp.path;
+  return Directory('$base${Platform.pathSeparator}TDMM${Platform.pathSeparator}autosaves');
+}
+
+Future<void> writeAutoSaveTdmm(
+  Map<String, dynamic> data, {
+  int maxSnapshots = 10,
+}) async {
+  final dir = getAutoSaveDirectory();
+  await dir.create(recursive: true);
+
+  final stamp = DateTime.now()
+      .toIso8601String()
+      .replaceAll(':', '-')
+      .split('.')
+      .first;
+  final targetPath =
+      '${dir.path}${Platform.pathSeparator}autosave_$stamp.tdmm';
+
+  final jsonString = const JsonEncoder.withIndent('  ').convert(data);
+  final bytes = Uint8List.fromList(utf8.encode(jsonString));
+
+  await writeBytesAtomically(targetPath, bytes);
+
+  final snapshots = dir
+      .listSync()
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.tdmm'))
+      .toList()
+    ..sort((a, b) => b.statSync().modified.compareTo(a.statSync().modified));
+
+  for (final old in snapshots.skip(maxSnapshots)) {
+    await old.delete();
+  }
+}

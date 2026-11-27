@@ -44,11 +44,15 @@ class DiagramRelationshipPainter extends CustomPainter {
       canvas.drawPath(path, paint);
 
       if (!rel.isTransferable && pts.length >= 4) {
+        final verticalLen = (pts[2].dy - pts[1].dy).abs();
+        final isVertical = verticalLen >= 18.0;
         final midPoint = Offset(pts[1].dx, (pts[1].dy + pts[2].dy) / 2);
+
         _drawTransferabilityDiamond(
           canvas: canvas,
           center: midPoint,
           strokePaint: paint,
+          isVertical: isVertical,
         );
       }
 
@@ -184,9 +188,13 @@ class DiagramRelationshipPainter extends CustomPainter {
     required Canvas canvas,
     required Offset center,
     required Paint strokePaint,
+    bool isVertical = false,
   }) {
-    const double halfWidth = 10.0;
-    const double halfHeight = 5.0;
+    const double longHalf = 10.0;
+    const double shortHalf = 5.0;
+
+    final double halfWidth = isVertical ? shortHalf : longHalf;
+    final double halfHeight = isVertical ? longHalf : shortHalf;
 
     final diamondPath = Path()
       ..moveTo(center.dx - halfWidth, center.dy)
