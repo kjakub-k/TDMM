@@ -874,4 +874,21 @@ class DiagramController extends ChangeNotifier {
         },
     };
   }
+
+  void reset({Size? canvasSize}) {
+    _tables.clear();
+    _relationships.clear();
+    _background = ViewerBackground();
+    if (canvasSize != null) {
+      _canvasSize = canvasSize;
+    }
+
+    _selectedTableId = null;
+    _selectedRelationshipId = null;
+    _editingTableId = null;
+    _clearPendingRelationship();
+    _mode = DiagramMode.select;
+
+    notifyListeners();
+  }
 }

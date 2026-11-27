@@ -254,6 +254,44 @@ class DiagramEditorState extends State<DiagramEditor> {
     await exportDiagramJson(diagramController.toSchemaJson());
   }
 
+  Future<void> _newDiagram() async {
+    final hasContent =
+        diagramController.tables.isNotEmpty ||
+        diagramController.relationships.isNotEmpty;
+
+    if (hasContent) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => ContentDialog(
+          title: const Text('Nový diagram'),
+          content: const Text(
+            'Opravdu chcete vytvořit prázdný diagram? Neuložené změny budou ztraceny.',
+          ),
+          actions: [
+            Button(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Zrušit'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Vytvořit'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    _autoSaveTimer?.cancel();
+    diagramController.reset(canvasSize: widget.setSize);
+    viewerKey.currentState?.transformationController.value = Matrix4.identity();
+
+    setState(() {
+      _currentFilePath = null;
+      _lastAutoSavedJson = null;
+    });
+  }
+
   List<DiagramTable> buildTables() {
     final relationships = diagramController.relationships;
     return [
@@ -326,6 +364,7 @@ class DiagramEditorState extends State<DiagramEditor> {
                           onBackgroundChanged: diagramController.setBackground,
                           viewerSize: diagramController.canvasSize,
                           onViewerSizeChanged: diagramController.setCanvasSize,
+                          onNew: () => _newDiagram(),
                           onSave: () => _saveDiagram(),
                           onSaveAs: () => _saveDiagram(saveAs: true),
                           onLoad: _loadDiagram,

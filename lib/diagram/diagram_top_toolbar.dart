@@ -7,6 +7,7 @@ class DiagramTopToolbar extends StatelessWidget {
   final ValueChanged<ViewerBackground> onBackgroundChanged;
   final Size viewerSize;
   final ValueChanged<Size> onViewerSizeChanged;
+  final VoidCallback? onNew;
   final VoidCallback? onSave;
   final VoidCallback? onSaveAs;
   final VoidCallback? onLoad;
@@ -20,6 +21,7 @@ class DiagramTopToolbar extends StatelessWidget {
     required this.onBackgroundChanged,
     required this.viewerSize,
     required this.onViewerSizeChanged,
+    this.onNew,
     this.onSave,
     this.onSaveAs,
     this.onLoad,
@@ -46,6 +48,10 @@ class DiagramTopToolbar extends StatelessWidget {
           DropDownButton(
             title: const Text('Soubor'),
             items: [
+              MenuFlyoutItem(
+                text: const Text('Nový'), 
+                onPressed: onNew
+              ),
               MenuFlyoutItem(
                 text: const Text('Uložit'),
                 onPressed: onSave,
